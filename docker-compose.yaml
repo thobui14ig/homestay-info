@@ -1,0 +1,23 @@
+version: '3'
+services:
+  fb-sync-info:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fb-sync-info
+    restart: always
+    environment:
+      - PORT=4000
+      - DB_TYPE=mysql
+      - DB_HOST=103.67.196.23
+      - DB_PORT=3306
+      - DB_USER_NAME=root
+      - DB_PASSWORD=111111
+      - DB_DATABASE=fb-sync
+      - NODE_OPTIONS=--max-old-space-size=4096
+      # redis
+      - REDIS_HOST=103.67.196.23
+      - REDIS_PORT=6379
+      - REDIS_TYPE=single
+    ports:
+      - '4000:4000'
