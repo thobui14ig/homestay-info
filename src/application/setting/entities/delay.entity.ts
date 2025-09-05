@@ -16,7 +16,7 @@ export class DelayEntity {
     @Column({ name: 'refresh_cookie', type: 'int', default: 0 })
     refreshCookie: number;
 
-    @Column({ name: 'updated_at', type: 'datetime' })
+    @Column({ name: 'updated_at', })
     updatedAt: Date;
 
     @Column({ name: 'refresh_token', type: 'int', default: 0 })

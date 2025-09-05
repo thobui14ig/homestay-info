@@ -8,9 +8,9 @@ services:
     restart: always
     environment:
       - PORT=4000
-      - DB_TYPE=mysql
+      - DB_TYPE=postgres
       - DB_HOST=103.67.196.23
-      - DB_PORT=3306
+      - DB_PORT=5432
       - DB_USER_NAME=root
       - DB_PASSWORD=111111
       - DB_DATABASE=fb-sync
