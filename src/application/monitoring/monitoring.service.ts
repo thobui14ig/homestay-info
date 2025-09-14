@@ -5,7 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Queue } from 'bull';
 import * as dayjs from 'dayjs';
 import * as utc from 'dayjs/plugin/utc';
-import { groupPostsByType } from 'src/common/utils/helper';
+import { getHttpAgent, groupPostsByType } from 'src/common/utils/helper';
 import { RedisService } from 'src/infra/redis/redis.service';
 import { DataSource, Repository } from 'typeorm';
 import { CookieService } from '../cookie/cookie.service';
@@ -21,9 +21,11 @@ import { ProxyService } from '../proxy/proxy.service';
 import { DelayEntity } from '../setting/entities/delay.entity';
 import { TokenService } from '../token/token.service';
 import { MonitoringConsumer } from './monitoring.process';
-import { KEY_PROCESS_QUEUE } from './monitoring.service.i';
+import { FB_UUID, KEY_PROCESS_QUEUE } from './monitoring.service.i';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import { CommentEntity } from '../comments/entities/comment.entity';
+import { CommentsService } from '../comments/comments.service';
 const proxy_check = require('proxy-check');
 
 dayjs.extend(utc);
@@ -32,13 +34,14 @@ type RefreshKey = 'refreshToken' | 'refreshCookie' | 'refreshProxy';
 @Injectable()
 export class MonitoringService implements OnModuleInit {
   postIdRunning: string[] = []
-  linksPublic: LinkEntity[] = []
+  // linksPublic: LinkEntity[] = []
   linksPrivate: LinkEntity[] = []
   isHandleUrl: boolean = false
   isReHandleUrl: boolean = false
   isHandleUuid: boolean = false
   isCheckProxy: boolean = false
   isUpdatePostIdV1: boolean = false
+  isUpdatePrivatePostIdV1: boolean = false
   private jobIntervalHandlers: Record<RefreshKey, NodeJS.Timeout> = {
     refreshToken: null,
     refreshCookie: null,
@@ -68,6 +71,9 @@ export class MonitoringService implements OnModuleInit {
     @InjectQueue(KEY_PROCESS_QUEUE.ADD_COMMENT) private monitoringQueue: Queue,
     private consumer: MonitoringConsumer,
     private readonly httpService: HttpService,
+    @InjectRepository(CommentEntity)
+    private commentRepository: Repository<CommentEntity>,
+    private commentService: CommentsService,
   ) {
   }
 
@@ -133,10 +139,8 @@ export class MonitoringService implements OnModuleInit {
 
     this.isHandleUrl = true
     for (const link of links) {
-      console.log("🚀 ~ MonitoringService ~ cronjobHandleProfileUrl ~ link:", link.linkUrl)
       try {
         const { type, name, postId, pageId, content } = await this.facebookService.getProfileLink(link.linkUrl) || {} as any;
-        console.log("🚀 ~ MonitoringService ~ cronjobHandleProfileUrl ~ content:", content)
 
         if (postId) {
           const exitLink = await this.linkRepository.findOne({
@@ -231,20 +235,38 @@ export class MonitoringService implements OnModuleInit {
   }
 
   @Cron(CronExpression.EVERY_5_SECONDS)
-  async updatePostIdV1() {
+  async updatePublicPostIdV1() {
     if (this.isUpdatePostIdV1) return
     this.isUpdatePostIdV1 = true
     const links = await this.linkService.getAllLinkPublicPostIdV1Null()
+
     for (const link of links) {
       try {
         const id = await this.facebookService.getPostIdPublicV1(link.linkUrl)
         if (id) {
           await this.linkRepository.update(link.id, { postIdV1: id })
-          this.linksPublic = this.linksPublic.filter(item => item.id === link.id)
+          // this.linksPublic = this.linksPublic.filter(item => item.id === link.id)
         }
       } catch (error) { }
     }
     this.isUpdatePostIdV1 = false
+  }
+
+  @Cron(CronExpression.EVERY_5_SECONDS)
+  async updatePrivatePostIdV1() {
+    if (this.isUpdatePrivatePostIdV1) return
+    this.isUpdatePrivatePostIdV1 = true
+    const links = await this.linkService.getAllLinkPrivatePostIdV1Null()
+    for (const link of links) {
+      try {
+        const id = await this.facebookService.getPostIdPrivateV1(link.linkUrl)
+        if (id) {
+          await this.linkRepository.update(link.id, { postIdV1: id })
+          // this.linksPublic = this.linksPublic.filter(item => item.id === link.id)
+        }
+      } catch (error) { }
+    }
+    this.isUpdatePrivatePostIdV1 = false
   }
 
   @Cron(CronExpression.EVERY_30_SECONDS)
@@ -381,5 +403,71 @@ export class MonitoringService implements OnModuleInit {
     if (status === LinkStatus.Pending && type === LinkType.PUBLIC) {
       return setting[0].delayOff
     }
+  }
+
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async processGetPhoneNumberVip() {
+    const listCmtWaitProcessClone = await this.getListDataProcessPhone() ?? []
+    if (listCmtWaitProcessClone.length < 5) return
+
+    const batchSize = 5;
+    for (let i = 0; i < listCmtWaitProcessClone.length; i += batchSize) {
+      const batch = listCmtWaitProcessClone.slice(i, i + batchSize);
+      const account = FB_UUID.find(item => item.mail === "chuongk57@gmail.com")
+      if (!account) continue;
+      const uids = batch.map((item) => {
+        return String(item.userUid)
+      })
+      const body = {
+        key: account.key,
+        uids: [...uids]
+      }
+      const proxy = await this.proxyService.getRandomProxy()
+      if (!proxy) break;
+      const httpsAgent = getHttpAgent(proxy)
+      const response = await firstValueFrom(
+        this.httpService.post("https://api.fbuid.com/keys/convert", body, { httpsAgent }),
+      );
+      const logs = {
+        body,
+        response: response.data
+      }
+      await this.insertLogs(JSON.stringify(uids), JSON.stringify(batch), JSON.stringify(logs))
+
+      if (response.data.length <= 0) continue
+      for (const element of batch) {
+        const phone = response?.data?.find(item => item.uid == element.userUid)
+        await this.deleteCmtWaitProcess(element.id)
+
+        if (!phone || phone?.phone?.length == 0) continue
+        const cmt = await this.commentService.getCommentByCmtId(element.linkId, element.commentId)
+        if (!cmt) continue;
+        await this.commentRepository.save({
+          id: cmt.id,
+          phoneNumber: phone.phone
+        })
+      }
+    }
+  }
+
+  getListDataProcessPhone() {
+    return this.connection.query(`
+        SELECT user_uid as userUid, comment_id as commentId, link_id as linkId, id
+        FROM cmt_wait_process
+        ORDER BY created_at ASC
+    `)
+  }
+
+  deleteCmtWaitProcess(id: number) {
+    return this.connection.query(`
+      delete from cmt_wait_process where id= ${id}
+    `)
+  }
+
+  insertLogs(UID: string, commentId: string, params: string) {
+    return this.connection.query(`
+      INSERT INTO logs (uid, cmt_id, params)
+      VALUES ('${UID}', '${commentId}', '${params}');  
+    `)
   }
 }

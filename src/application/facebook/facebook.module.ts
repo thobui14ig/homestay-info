@@ -18,6 +18,7 @@ import { CheckProxyBlockUseCaseModule } from './usecase/check-proxy-block/check-
 import { CommentsModule } from '../comments/comments.module';
 import { FacebookController } from './facebook.controller';
 import { ProxyModule } from '../proxy/proxy.module';
+import { CookieModule } from '../cookie/cookie.module';
 
 @Module({
   imports: [
@@ -31,7 +32,8 @@ import { ProxyModule } from '../proxy/proxy.module';
     CheckProxyBlockUseCaseModule,
     TypeOrmModule.forFeature([TokenEntity, CookieEntity, ProxyEntity, LinkEntity, CommentEntity, DelayEntity]),
     forwardRef(() => CommentsModule),
-    ProxyModule
+    ProxyModule,
+    CookieModule
   ],
   controllers: [FacebookController],
   providers: [FacebookService],

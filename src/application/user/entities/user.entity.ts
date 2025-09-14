@@ -49,7 +49,7 @@ export class UserEntity {
   @Column({ default: null, name: 'account_fb_uuid' })
   accountFbUuid: string;
 
-  @CreateDateColumn({ name: 'created_at', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn({ type: 'datetime', name: 'created_at', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
   @OneToMany(() => LinkEntity, (link) => link.user)

@@ -54,7 +54,6 @@ export class GetInfoLinkUseCase {
                 }),
             );
             const { name: linkName, id: pageId } = response.data.from || {}
-            console.log("🚀 ~ GetInfoLinkUseCase ~ getInfoLink ~ response.data:", response.data)
             const { id, message = null, description = null } = response.data
 
             return {
@@ -67,6 +66,11 @@ export class GetInfoLinkUseCase {
         } catch (error) {
             console.log("🚀 ~ GetInfoLinkUseCase ~ getInfoLink ~ error:", error?.message)
             if (error.response?.data?.error?.code === 100 && (error?.response?.data?.error?.message as string)?.includes('Unsupported get request. Object with ID')) {
+                return {
+                    linkType: LinkType.DIE
+                }
+            }
+            if (error.response?.data?.error?.code === 10 || error.response?.data?.error?.code === 3 || error.response?.data?.error?.code === 100) {
                 return {
                     linkType: LinkType.DIE
                 }

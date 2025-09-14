@@ -22,7 +22,7 @@ export class CommentEntity {
     @Column({ name: 'message', type: 'text', nullable: true })
     message: string;
 
-    @Column({ name: 'time_created', nullable: true })
+    @Column({ name: 'time_created', type: 'datetime', nullable: true })
     timeCreated: Date;
 
     @Column({ name: 'phone_number', type: 'varchar', length: 255, nullable: true })

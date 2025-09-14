@@ -130,7 +130,7 @@ export class LinkService {
     return this.repo.find({
       where: {
         process: false,
-        postId: IsNull()
+        postId: IsNull(),
       },
       relations: {
         user: true
@@ -161,6 +161,17 @@ export class LinkService {
       }
     })
   }
+
+  getAllLinkPrivatePostIdV1Null() {
+    return this.repo.find({
+      where: {
+        status: In([LinkStatus.Started, LinkStatus.Pending]),
+        type: LinkType.PRIVATE,
+        postIdV1: IsNull(),
+      }
+    })
+  }
+
 
   processTotalComment() {
     return this.conenction.query(`
