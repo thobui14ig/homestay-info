@@ -178,7 +178,17 @@ export class FacebookService {
   }
 
   async getProfileLink(url: string) {
-    const postId = extractFacebookId(url);
+    let postId = null
+    if (url.includes("share")) {
+      const postIdBefore = await this.getPostIdPublicV1Before(url)
+      if (postIdBefore) {
+        postId = postIdBefore
+      }
+    } else {
+      postId = extractFacebookId(url);
+
+    }
+    console.log("🚀 ~ FacebookService ~ getProfileLink ~ postId:", postId)
 
     if (!postId) {
       return {
@@ -276,6 +286,55 @@ export class FacebookService {
     }
   }
 
+
+  async getPostIdPublicV1Before(url: string, i: number = 0) {
+    try {
+      const proxy = await this.proxyService.getRandomProxy()
+      const httpsAgent = getHttpAgent(proxy)
+
+      const response = await firstValueFrom(
+        this.httpService.get(url, {
+          headers: {
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "accept-language": "en-US,en;q=0.9,vi;q=0.8",
+            "cache-control": "max-age=0",
+            "dpr": "1",
+            "priority": "u=0, i",
+            "sec-ch-prefers-color-scheme": "light",
+            "sec-ch-ua": "\"Google Chrome\";v=\"135\", \"Not-A.Brand\";v=\"8\", \"Chromium\";v=\"135\"",
+            "sec-ch-ua-full-version-list": "\"Google Chrome\";v=\"135.0.7049.116\", \"Not-A.Brand\";v=\"8.0.0.0\", \"Chromium\";v=\"135.0.7049.116\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-model": "\"\"",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-ch-ua-platform-version": "\"10.0.0\"",
+            "sec-fetch-dest": "document",
+            "sec-fetch-mode": "navigate",
+            "sec-fetch-site": "same-origin",
+            "sec-fetch-user": "?1",
+            "upgrade-insecure-requests": "1",
+            "viewport-width": "856"
+          },
+          httpsAgent,
+        }),
+      );
+      const htmlContent = response.data
+      const matchV1 = htmlContent.match(/"post_id":"(.*?)"/);
+
+      if (matchV1 && matchV1[1]) {
+        const postId = matchV1[1]
+        if (postId) {
+          return postId
+        }
+      }
+      if (i === 5) {
+        return null
+      }
+      i += 1
+      return this.getPostIdPublicV1Before(url, i)
+    } catch (error) {
+      return null
+    }
+  }
   async getPostIdPrivateV1(url: string) {
     try {
       const proxy = await this.proxyService.getRandomProxy()
