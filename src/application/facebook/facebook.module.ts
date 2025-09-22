@@ -19,6 +19,7 @@ import { CommentsModule } from '../comments/comments.module';
 import { FacebookController } from './facebook.controller';
 import { ProxyModule } from '../proxy/proxy.module';
 import { CookieModule } from '../cookie/cookie.module';
+import { GetInfoLinkTiktokUseCaseModule } from './usecase/get-info-link-tiktok/get-info-link-tiktok.module';
 
 @Module({
   imports: [
@@ -33,7 +34,8 @@ import { CookieModule } from '../cookie/cookie.module';
     TypeOrmModule.forFeature([TokenEntity, CookieEntity, ProxyEntity, LinkEntity, CommentEntity, DelayEntity]),
     forwardRef(() => CommentsModule),
     ProxyModule,
-    CookieModule
+    CookieModule,
+    GetInfoLinkTiktokUseCaseModule
   ],
   controllers: [FacebookController],
   providers: [FacebookService],

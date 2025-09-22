@@ -1,3 +1,4 @@
+import { HttpService } from '@nestjs/axios';
 import { InjectQueue } from '@nestjs/bull';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -5,9 +6,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Queue } from 'bull';
 import * as dayjs from 'dayjs';
 import * as utc from 'dayjs/plugin/utc';
-import { getHttpAgent, groupPostsByType } from 'src/common/utils/helper';
+import { firstValueFrom } from 'rxjs';
+import { getHttpAgent } from 'src/common/utils/helper';
 import { RedisService } from 'src/infra/redis/redis.service';
 import { DataSource, Repository } from 'typeorm';
+import { CommentsService } from '../comments/comments.service';
+import { CommentEntity } from '../comments/entities/comment.entity';
 import { CookieService } from '../cookie/cookie.service';
 import { FacebookService } from '../facebook/facebook.service';
 import {
@@ -22,10 +26,6 @@ import { DelayEntity } from '../setting/entities/delay.entity';
 import { TokenService } from '../token/token.service';
 import { MonitoringConsumer } from './monitoring.process';
 import { FB_UUID, KEY_PROCESS_QUEUE } from './monitoring.service.i';
-import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
-import { CommentEntity } from '../comments/entities/comment.entity';
-import { CommentsService } from '../comments/comments.service';
 const proxy_check = require('proxy-check');
 
 dayjs.extend(utc);
@@ -115,9 +115,7 @@ export class MonitoringService implements OnModuleInit {
     if (key === "refreshProxy") {
       return this.proxyService.updateActiveAllProxy()
     }
-    if (key === "delayCommentCount") {
-      return this.startProcessTotalCount()
-    }
+
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
@@ -140,7 +138,7 @@ export class MonitoringService implements OnModuleInit {
     this.isHandleUrl = true
     for (const link of links) {
       try {
-        const { type, name, postId, pageId, content } = await this.facebookService.getProfileLink(link.linkUrl) || {} as any;
+        const { type, name, postId, pageId, content } = await this.facebookService.getProfileLink(link.linkUrl, link.crawType) || {} as any;
 
         if (postId) {
           const exitLink = await this.linkRepository.findOne({
@@ -218,22 +216,6 @@ export class MonitoringService implements OnModuleInit {
     this.isCheckProxy = false
   }
 
-  @Cron(CronExpression.EVERY_10_MINUTES)
-  async deleteDataDie() {
-    // return this.proxyService.deleteProxyDie()
-    this.cookieService.deleteCookieDie()
-    this.tokenService.deleteTokenDie()
-  }
-
-  @Cron(CronExpression.EVERY_5_SECONDS)
-  async updateUUIDUser() {
-    if (!this.isHandleUuid) {
-      this.isHandleUuid = true
-      await this.facebookService.updateUUIDUser()
-      this.isHandleUuid = false
-    }
-  }
-
   @Cron(CronExpression.EVERY_5_SECONDS)
   async updatePublicPostIdV1() {
     if (this.isUpdatePostIdV1) return
@@ -287,103 +269,6 @@ export class MonitoringService implements OnModuleInit {
       `)
   }
 
-  async startProcessTotalCount() {
-    const postsStarted = await this.linkService.getPostStarted()
-    const groupPost = groupPostsByType(postsStarted || []);
-
-    const processLinksPulic = async () => {
-      const links = groupPost.public ?? [];
-      const batchSize = 10;
-
-      // Hàm xử lý một link
-      const processLink = async (link: LinkEntity) => {
-        try {
-          const res = await this.facebookService.getCountLikePublic(link.linkUrl);
-          const totalCount = res?.totalCount;
-          const totalLike = res?.totalLike;
-          const oldCountCmt = link.countBefore;
-          const oldLike = link.likeBefore;
-
-
-          if (totalCount) {
-            link.countBefore = totalCount;
-            const difference = totalCount - (oldCountCmt ?? 0)
-
-            if (totalCount > difference && difference > 0) {
-              link.lastCommentTime = dayjs().utc().format('YYYY-MM-DD HH:mm:ss') as any
-              link.countAfter = difference
-            }
-          }
-
-          if (totalLike) {
-            link.likeBefore = totalLike;
-            const difference = totalLike - (oldLike ?? 0)
-            if (totalLike > difference && difference > 0) {
-              link.likeAfter = difference
-            }
-          }
-
-          await this.linkRepository.save(link);
-        } catch (error) {
-          console.log("🚀 ~ MonitoringService ~ processLinksPulic ~ error:", error?.message);
-        }
-      };
-
-      for (let i = 0; i < links.length; i += batchSize) {
-        const batch = links.slice(i, i + batchSize);
-        await Promise.all(batch.map(link => processLink(link)));
-      }
-    }
-
-    const processLinksPrivate = async () => {
-      const links = groupPost.private ?? [];
-      const batchSize = 10;
-
-
-      const processPrivateLink = async (link: any) => {
-        const proxy = await this.proxyService.getRandomProxy();
-        if (!proxy) return;
-
-        try {
-          const res = await this.facebookService.getTotalCountWithToken(link);
-
-          if (res?.totalCountCmt && res?.totalCountLike) {
-            const oldCountCmt = link.countBefore;
-            const oldLike = link.likeBefore;
-
-            link.countBefore = res.totalCountCmt;
-            const differenceCmt = res.totalCountCmt - (oldCountCmt ?? 0)
-
-            if (res.totalCountCmt > differenceCmt && differenceCmt > 0) {
-              link.countAfter = differenceCmt
-            }
-
-            link.likeBefore = res.totalCountLike;
-            const differenceLike = res.totalCountLike - (oldLike ?? 0)
-            if (res.totalCountLike > differenceLike && differenceLike > 0) {
-              link.likeAfter = differenceLike
-            }
-
-            await this.linkRepository.save(link);
-          }
-        } catch (error) {
-          console.log("🚀 ~ MonitoringService ~ processPrivateLinks ~ error:", error?.message);
-        }
-      };
-
-      for (let i = 0; i < links.length; i += batchSize) {
-        const batch = links.slice(i, i + batchSize);
-        await Promise.all(batch.map(link => processPrivateLink(link)));
-      }
-    }
-
-    const processTotalComment = async () => {
-      await this.linkService.processTotalComment()
-
-    }
-
-    return Promise.all([processLinksPrivate(), processLinksPulic(), processTotalComment()])
-  }
 
   async getDelayTime(status: LinkStatus, type: LinkType, delayOnPrivateUser: number, delayOnPublic: number) {
     const setting = await this.delayRepository.find()

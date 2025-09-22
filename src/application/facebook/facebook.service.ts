@@ -10,7 +10,7 @@ import { changeCookiesFb, extractFacebookId, formatCookies, getHttpAgent } from 
 import { DataSource, Repository } from 'typeorm';
 import { CommentsService } from '../comments/comments.service';
 import { CommentEntity } from '../comments/entities/comment.entity';
-import { LinkEntity, LinkType } from '../links/entities/links.entity';
+import { CrawType, LinkEntity, LinkType } from '../links/entities/links.entity';
 import { ProxyEntity } from '../proxy/entities/proxy.entity';
 import { ProxyService } from '../proxy/proxy.service';
 import { TokenType } from '../token/entities/token.entity';
@@ -28,6 +28,7 @@ import {
   getHeaderToken
 } from './utils';
 import { CookieService } from '../cookie/cookie.service';
+import { GetInfoLinkTiktokUseCase } from './usecase/get-info-link-tiktok/get-info-link-tiktok';
 
 dayjs.extend(utc);
 // dayjs.extend(timezone);
@@ -54,7 +55,7 @@ export class FacebookService {
     private commentsService: CommentsService,
     private proxyService: ProxyService,
     private cookieService: CookieService,
-
+    private getInfoLinkTiktokUseCase: GetInfoLinkTiktokUseCase,
     private connection: DataSource
   ) {
   }
@@ -177,51 +178,56 @@ export class FacebookService {
     return commentsRes.data
   }
 
-  async getProfileLink(url: string) {
-    let postId = null
-    if (url.includes("share")) {
-      const postIdBefore = await this.getPostIdPublicV1Before(url)
-      if (postIdBefore) {
-        postId = postIdBefore
+  async getProfileLink(url: string, crawType: CrawType) {
+    if (crawType === CrawType.FACEBOOK) {
+      let postId = null
+      if (url.includes("share")) {
+        const postIdBefore = await this.getPostIdPublicV1Before(url)
+        if (postIdBefore) {
+          postId = postIdBefore
+        }
+      } else {
+        postId = extractFacebookId(url);
+
       }
-    } else {
-      postId = extractFacebookId(url);
 
-    }
-    console.log("🚀 ~ FacebookService ~ getProfileLink ~ postId:", postId)
-
-    if (!postId) {
-      return {
-        type: LinkType.UNDEFINED
+      if (!postId) {
+        return {
+          type: LinkType.UNDEFINED
+        }
       }
-    }
 
-    const info = await this.getInfoLinkUseCase.getInfoLink(postId);
-    if (!info?.id) {
-      return { type: info?.linkType ?? LinkType.UNDEFINED };
-    }
+      const info = await this.getInfoLinkUseCase.getInfoLink(postId);
 
-    const cmtResponse = await this.getCommentPublicUseCase.getCmtPublic(info.id, true);
-    if (!cmtResponse) return { type: LinkType.UNDEFINED };
+      if (!info?.id) {
+        return { type: info?.linkType ?? LinkType.UNDEFINED };
+      }
 
-    const baseInfo = {
-      name: info.linkName,
-      postId: info.id,
-      content: info.content
-    };
+      const cmtResponse = await this.getCommentPublicUseCase.getCmtPublic(info.id, true);
+      if (!cmtResponse) return { type: LinkType.UNDEFINED };
 
-    if (cmtResponse.hasData) {
-      return {
-        type: LinkType.PUBLIC,
-        ...baseInfo,
+      const baseInfo = {
+        name: info.linkName,
+        postId: info.id,
+        content: info.content
       };
-    }
 
-    return {
-      type: LinkType.PRIVATE,
-      ...baseInfo,
-      pageId: info.pageId,
-    };
+      if (cmtResponse.hasData) {
+        return {
+          type: LinkType.PUBLIC,
+          ...baseInfo,
+        };
+      }
+
+      return {
+        type: LinkType.PRIVATE,
+        ...baseInfo,
+        pageId: info.pageId,
+      };
+    } else {
+      const postId = extractFacebookId(url);
+      return this.getInfoLinkTiktokUseCase.execute(postId)
+    }
   }
 
   async getCountLikePublic(url: string) {

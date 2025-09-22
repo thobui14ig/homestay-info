@@ -29,6 +29,11 @@ export enum HideBy {
   KEYWORDS = 'keywords'
 }
 
+export enum CrawType {
+  FACEBOOK = 'facebook',
+  TIKTOK = 'tiktok'
+}
+
 @Entity('links')
 export class LinkEntity {
   @PrimaryGeneratedColumn()
@@ -108,6 +113,9 @@ export class LinkEntity {
 
   @Column({ name: 'thread' })
   thread: number;
+
+  @Column({ name: 'craw_type' })
+  crawType: CrawType;
 
   @CreateDateColumn({
     type: 'datetime',
