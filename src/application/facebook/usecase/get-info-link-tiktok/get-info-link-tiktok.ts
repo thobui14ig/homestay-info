@@ -13,13 +13,13 @@ export class GetInfoLinkTiktokUseCase {
         private proxyService: ProxyService
     ) { }
 
-    async execute(postId: string) {
+    async execute(url:string) {
         const proxy = await this.proxyService.getRandomProxy()
         if (!proxy) return null
         const httpsAgent = getHttpAgent(proxy)
         try {
             const response = await firstValueFrom(
-                this.httpService.get(`https://www.tiktok.com/oembed?url=https://www.tiktok.com/@chi_diday/video/${postId}?q=h0me%20stay%20hue&t=1758038012990`, {
+                this.httpService.get(`https://www.tiktok.com/oembed?url=${url}`, {
                     httpsAgent
                 })
             )
@@ -30,10 +30,9 @@ export class GetInfoLinkTiktokUseCase {
                 name: infoFomTiktok.author_name,
                 type: LinkType.PUBLIC,
             }
-
             return info
         } catch (error) {
-            console.log(error.message)
+            console.log("Get info tiktok errors:", error.message)
             return null
         }
     }

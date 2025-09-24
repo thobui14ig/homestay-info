@@ -139,7 +139,6 @@ export class MonitoringService implements OnModuleInit {
     for (const link of links) {
       try {
         const { type, name, postId, pageId, content } = await this.facebookService.getProfileLink(link.linkUrl, link.crawType) || {} as any;
-
         if (postId) {
           const exitLink = await this.linkRepository.findOne({
             where: {

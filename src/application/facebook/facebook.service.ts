@@ -179,6 +179,7 @@ export class FacebookService {
   }
 
   async getProfileLink(url: string, crawType: CrawType) {
+    console.log(url)
     if (crawType === CrawType.FACEBOOK) {
       let postId = null
       if (url.includes("share")) {
@@ -225,8 +226,12 @@ export class FacebookService {
         pageId: info.pageId,
       };
     } else {
-      const postId = extractFacebookId(url);
-      return this.getInfoLinkTiktokUseCase.execute(postId)
+      const res = await this.getInfoLinkTiktokUseCase.execute(url)
+      if (!res?.postId) {
+        return { type: res?.type ?? LinkType.UNDEFINED };
+      }
+
+      return res
     }
   }
 
