@@ -14,7 +14,7 @@ export class GetInfoLinkTiktokUseCase {
     ) { }
 
     async execute(url:string) {
-        const proxy = await this.proxyService.getRandomProxy()
+        const proxy = await this.proxyService.getProxyTiktok()
         if (!proxy) return null
         const httpsAgent = getHttpAgent(proxy)
         try {

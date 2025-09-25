@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { delay } from 'src/common/utils/helper';
-import { Repository } from 'typeorm';
+import { MoreThanOrEqual, Repository } from 'typeorm';
 import { ProxyEntity, ProxyStatus } from './entities/proxy.entity';
 
 @Injectable()
@@ -42,6 +42,14 @@ export class ProxyService {
     const randomProxy = this.proxies[randomIndex];
 
     return randomProxy
+  }
+
+  getProxyTiktok() {
+    return this.repo.findOne({
+      where: {
+        id: MoreThanOrEqual(1)
+      }
+    })
   }
 
   updateProxyFbBlock(proxy: ProxyEntity) {
