@@ -214,6 +214,7 @@ export class MonitoringService implements OnModuleInit {
           }
         }
       }).catch(async (e) => {
+        console.log(222, e)
         await this.proxyService.updateProxyDie(proxy)
       });
     }
