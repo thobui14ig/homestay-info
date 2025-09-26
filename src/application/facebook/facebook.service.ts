@@ -185,7 +185,7 @@ export class FacebookService {
       if (url.includes("share")) {
         console.log(2)
         const postIdBefore = await this.getPostIdPublicV1Before(url)
-        console.log(333)
+        console.log(333, postIdBefore)
         if (postIdBefore) {
           postId = postIdBefore
         }
