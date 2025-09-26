@@ -345,6 +345,7 @@ export class FacebookService {
       i += 1
       return this.getPostIdPublicV1Before(url, i)
     } catch (error) {
+      console.log(error)
       return null
     }
   }
