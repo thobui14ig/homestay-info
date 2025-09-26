@@ -130,6 +130,7 @@ export class MonitoringService implements OnModuleInit {
     }
 
     const links = await this.linkService.getLinksWithoutProfile()
+    console.log('link handle: ', links.length)
     if (links.length === 0) {
       this.isHandleUrl = false
       return
@@ -202,6 +203,7 @@ export class MonitoringService implements OnModuleInit {
       proxy_check(config).then(async (res) => {
         if (res) {
           const status = await this.facebookService.checkProxyBlock(proxy)
+          console.log(status)
           if (!status) {
             await this.proxyService.updateProxyActive(proxy)
           } else {
