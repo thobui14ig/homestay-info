@@ -6,7 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Queue } from 'bull';
 import * as dayjs from 'dayjs';
 import * as utc from 'dayjs/plugin/utc';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, lastValueFrom } from 'rxjs';
 import { getHttpAgent } from 'src/common/utils/helper';
 import { RedisService } from 'src/infra/redis/redis.service';
 import { DataSource, Repository } from 'typeorm';
@@ -194,29 +194,40 @@ export class MonitoringService implements OnModuleInit {
     const proxyInActive = await this.proxyRepository.find()
 
     for (const proxy of proxyInActive) {
-          console.log(proxy)
-      const [host, port, username, password] = proxy.proxyAddress.split(':');
-      const config = {
-        host,
-        port,
-        proxyAuth: `${username}:${password}`
-      };
-      proxy_check(config).then(async (res) => {
-        console.log(res)
-
-        if (res) {
-          const status = await this.facebookService.checkProxyBlock(proxy)
-          console.log(status)
-          if (!status) {
-            await this.proxyService.updateProxyActive(proxy)
-          } else {
-            await this.proxyService.updateProxyFbBlock(proxy)
-          }
+      //     console.log(proxy)
+      // const [host, port, username, password] = proxy.proxyAddress.split(':');
+      // console.log(2222, [host, port, username, password] )
+      // const config = {
+      //   host,
+      //   port,
+      //   proxyAuth: `${username}:${password}`
+      // };
+      const httpsAgent = getHttpAgent(proxy)
+      try {
+        const response = await firstValueFrom(
+          this.httpService.get('https://api.ipify.org/?format=json', {httpsAgent}),
+        )
+        if(response.data?.ip) {
+          // const status = await this.facebookService.checkProxyBlock(proxy)
         }
-      }).catch(async (e) => {
-        console.log(222, e)
-        await this.proxyService.updateProxyDie(proxy)
-      });
+        console.log(response.data)
+      } catch (error) {
+        console.log(545555555555, error)
+      }
+
+      // proxy_check(config).then(async (res) => {
+      //   if (res) {
+      //     const status = await this.facebookService.checkProxyBlock(proxy)
+      //     if (!status) {
+      //       await this.proxyService.updateProxyActive(proxy)
+      //     } else {
+      //       await this.proxyService.updateProxyFbBlock(proxy)
+      //     }
+      //   }
+      // }).catch(async (e) => {
+      //   console.log(545555555555, e)
+      //   await this.proxyService.updateProxyDie(proxy)
+      // });
     }
     this.isCheckProxy = false
   }
