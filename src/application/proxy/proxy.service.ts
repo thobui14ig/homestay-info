@@ -25,7 +25,7 @@ export class ProxyService {
   async cronjobRandomProxy() {
     const proxies = await this.repo.find({
       where: {
-        status: ProxyStatus.ACTIVE,
+        // status: ProxyStatus.ACTIVE,
         isFbBlock: false
       }
     })
