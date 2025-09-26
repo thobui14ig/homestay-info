@@ -192,8 +192,9 @@ export class MonitoringService implements OnModuleInit {
 
     this.isCheckProxy = true
     const proxyInActive = await this.proxyRepository.find()
-    console.log(proxyInActive)
+
     for (const proxy of proxyInActive) {
+          console.log(proxy)
       const [host, port, username, password] = proxy.proxyAddress.split(':');
       const config = {
         host,
