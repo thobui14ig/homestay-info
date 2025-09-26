@@ -300,7 +300,7 @@ export class FacebookService {
   }
 
 
-  async getPostIdPublicV1Before(url: string, i: number = 0) {
+  async getPostIdPublicV1Before(url: string) {
     try {
       const proxy = await this.proxyService.getRandomProxy()
       const httpsAgent = getHttpAgent(proxy)
@@ -339,11 +339,8 @@ export class FacebookService {
           return postId
         }
       }
-      if (i === 5) {
-        return null
-      }
-      i += 1
-      return this.getPostIdPublicV1Before(url, i)
+
+      return null
     } catch (error) {
       console.log(error)
       return null
