@@ -299,8 +299,8 @@ export class FacebookService {
 
   async getPostIdPublicV1Before(url: string) {
     try {
-      const proxy = await this.proxyService.getRandomProxy()
-      const httpsAgent = getHttpAgent(proxy)
+      // const proxy = await this.proxyService.getRandomProxy()
+      const httpsAgent = getHttpAgent()
       const response = await firstValueFrom(
         this.httpService.get(url, {
           headers: {

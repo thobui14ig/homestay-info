@@ -78,9 +78,9 @@ function extractFacebookId(url: string): string | null {
     return null;
 }
 
-function getHttpAgent(proxy: ProxyEntity) {
+function getHttpAgent(proxy?: ProxyEntity) {
     const proxyArr = proxy?.proxyAddress.split(':')
-    const agent = `http://${proxyArr[2]}:${proxyArr[3]}@${proxyArr[0]}:${proxyArr[1]}`
+    const agent = `ip.mproxy.vn:12289:thobui1996:83rvNFb5zPJv3xf`
     const httpsAgent = new HttpsProxyAgent(agent);
 
     return httpsAgent;

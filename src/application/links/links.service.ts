@@ -6,7 +6,7 @@ import * as utc from 'dayjs/plugin/utc';
 import { DataSource, In, IsNull, MoreThan, MoreThanOrEqual, Not, Repository } from 'typeorm';
 import { LEVEL } from '../user/entities/user.entity';
 import { UpdateLinkDTO } from './dto/update-link.dto';
-import { HideBy, LinkEntity, LinkStatus, LinkType } from './entities/links.entity';
+import { CrawType, HideBy, LinkEntity, LinkStatus, LinkType } from './entities/links.entity';
 import { ISettingLinkDto } from './links.service.i';
 import { CookieStatus } from '../cookie/entities/cookie.entity';
 
@@ -131,6 +131,7 @@ export class LinkService {
       where: {
         process: false,
         postId: IsNull(),
+        crawType: CrawType.TIKTOK
       },
       relations: {
         user: true
