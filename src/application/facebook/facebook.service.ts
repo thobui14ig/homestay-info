@@ -302,9 +302,9 @@ export class FacebookService {
 
   async getPostIdPublicV1Before(url: string) {
     try {
-      const proxy = await this.proxyService.getRandomProxy()
-      const httpsAgent = getHttpAgent(proxy)
-
+      // const proxy = await this.proxyService.getRandomProxy()
+      // const httpsAgent = getHttpAgent(proxy)
+      console.log(44444)
       const response = await firstValueFrom(
         this.httpService.get(url, {
           headers: {
@@ -330,6 +330,8 @@ export class FacebookService {
           // httpsAgent,
         }),
       );
+      console.log(5555)
+
       const htmlContent = response.data
       const matchV1 = htmlContent.match(/"post_id":"(.*?)"/);
 
