@@ -206,7 +206,7 @@ export class MonitoringService implements OnModuleInit {
       const httpsAgent = getHttpAgent(proxy)
       try {
         const response = await firstValueFrom(
-          this.httpService.get('https://api.ipify.org/?format=json')
+          this.httpService.get('https://api.ipify.org/?format=json', {httpsAgent}),
         )
         if(response.data?.ip) {
           // const status = await this.facebookService.checkProxyBlock(proxy)
