@@ -199,9 +199,7 @@ export class FacebookService {
           type: LinkType.UNDEFINED
         }
       }
-      console.log(7777)
       const info = await this.getInfoLinkUseCase.getInfoLink(postId);
-      console.log(88888)
 
       if (!info?.id) {
         return { type: info?.linkType ?? LinkType.UNDEFINED };

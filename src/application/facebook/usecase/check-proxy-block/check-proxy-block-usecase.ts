@@ -46,12 +46,14 @@ export class CheckProxyBlockUseCase {
             );
             const htmlContent = response.data
             const isBlockProxy = (htmlContent as string).includes('Temporarily Blocked')
+            console.log(222, isBlockProxy)
 
             if (isBlockProxy) {
                 return true
             }
 
             const isCookieDie = (htmlContent as string).includes('You must log in to continue')
+            console.log(222, isCookieDie)
             if (isCookieDie) {
                 return true
             }

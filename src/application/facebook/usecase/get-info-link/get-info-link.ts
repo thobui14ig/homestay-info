@@ -19,16 +19,14 @@ export class GetInfoLinkUseCase {
     ) {
     }
 
-    async getInfoLink(postId: string, i = 0, retryCount = 0): Promise<IGetInfoLinkResponse> | null {
+    async getInfoLink(postId: string, i = 0): Promise<IGetInfoLinkResponse> | null {
         const proxy = await this.proxyService.getRandomProxy()
         const token = await this.tokenService.getTokenGetInfoActiveFromDb()
-        console.log(999)
         if (!proxy || !token) {
             return {
                 linkType: LinkType.UNDEFINED
             }
         }
-        console.log(1000)
 
         try {
             const httpsAgent = getHttpAgent(proxy)
@@ -83,18 +81,6 @@ export class GetInfoLinkUseCase {
             if (error.response?.data?.error?.code === 190) {//check point
                 await this.tokenService.updateStatusToken(token, TokenStatus.DIE)
             }
-            // if (i === 0 && retryCount === 0) {
-            //     i = i + 1
-
-            //     return this.getInfoLink(postId, i)
-            // }
-
-            // if (retryCount < 3) {
-            //     retryCount = retryCount + 1
-
-            //     return this.getInfoLink(postId, 1, retryCount)
-            // }
-
 
             return {
                 linkType: LinkType.UNDEFINED
