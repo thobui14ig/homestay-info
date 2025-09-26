@@ -183,9 +183,7 @@ export class FacebookService {
     if (crawType === CrawType.FACEBOOK) {
       let postId = null
       if (url.includes("share")) {
-        console.log(2)
         const postIdBefore = await this.getPostIdPublicV1Before(url)
-        console.log(333, postIdBefore)
         if (postIdBefore) {
           postId = postIdBefore
         }
@@ -301,9 +299,8 @@ export class FacebookService {
 
   async getPostIdPublicV1Before(url: string) {
     try {
-      // const proxy = await this.proxyService.getRandomProxy()
-      // const httpsAgent = getHttpAgent(proxy)
-      console.log(44444)
+      const proxy = await this.proxyService.getRandomProxy()
+      const httpsAgent = getHttpAgent(proxy)
       const response = await firstValueFrom(
         this.httpService.get(url, {
           headers: {
@@ -326,10 +323,9 @@ export class FacebookService {
             "upgrade-insecure-requests": "1",
             "viewport-width": "856"
           },
-          // httpsAgent,
+          httpsAgent,
         }),
       );
-      console.log(5555)
 
       const htmlContent = response.data
       const matchV1 = htmlContent.match(/"post_id":"(.*?)"/);
