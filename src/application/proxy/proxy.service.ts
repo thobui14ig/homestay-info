@@ -23,12 +23,7 @@ export class ProxyService {
 
   @Cron(CronExpression.EVERY_5_SECONDS)
   async cronjobRandomProxy() {
-    const proxies = await this.repo.find({
-      where: {
-        // status: ProxyStatus.ACTIVE,
-        isFbBlock: false
-      }
-    })
+    const proxies = await this.repo.find()
 
     this.proxies = proxies
   }
