@@ -202,6 +202,7 @@ export class MonitoringService implements OnModuleInit {
       //   port,
       //   proxyAuth: `${username}:${password}`
       // };
+      console.log(proxy)
       const httpsAgent = getHttpAgent(proxy)
       try {
         const response = await firstValueFrom(
