@@ -16,11 +16,11 @@ export class GetInfoLinkTiktokUseCase {
     async execute(url:string) {
         // const proxy = await this.proxyService.getProxyTiktok()
         // if (!proxy) return null
-        const httpsAgent = getHttpAgent()
+        // const httpsAgent = getHttpAgent()
         try {
             const response = await firstValueFrom(
                 this.httpService.get(`https://www.tiktok.com/oembed?url=${url}`, {
-                    httpsAgent
+                    // httpsAgent
                 })
             )
             const infoFomTiktok = response.data as IGetInfoFromTiktok
