@@ -185,7 +185,7 @@ export class MonitoringService implements OnModuleInit {
     this.isHandleUrl = false
   }
 
-  @Cron(CronExpression.EVERY_5_SECONDS)
+  // @Cron(CronExpression.EVERY_5_SECONDS)
   async checkProxy() {
     if (this.isCheckProxy) return
 
@@ -215,7 +215,7 @@ export class MonitoringService implements OnModuleInit {
     this.isCheckProxy = false
   }
 
-  @Cron(CronExpression.EVERY_5_SECONDS)
+  // @Cron(CronExpression.EVERY_5_SECONDS)
   async updatePublicPostIdV1() {
     if (this.isUpdatePostIdV1) return
     this.isUpdatePostIdV1 = true
@@ -233,7 +233,7 @@ export class MonitoringService implements OnModuleInit {
     this.isUpdatePostIdV1 = false
   }
 
-  @Cron(CronExpression.EVERY_5_SECONDS)
+  // @Cron(CronExpression.EVERY_5_SECONDS)
   async updatePrivatePostIdV1() {
     if (this.isUpdatePrivatePostIdV1) return
     this.isUpdatePrivatePostIdV1 = true
@@ -289,7 +289,7 @@ export class MonitoringService implements OnModuleInit {
     }
   }
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  // @Cron(CronExpression.EVERY_5_MINUTES)
   async processGetPhoneNumberVip() {
     const listCmtWaitProcessClone = await this.getListDataProcessPhone() ?? []
     if (listCmtWaitProcessClone.length < 5) return
